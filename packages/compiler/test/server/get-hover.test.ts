@@ -719,6 +719,33 @@ describe("const", () => {
       },
     });
   });
+
+  it("shows declared type when const initializer fails type check (#4545)", async () => {
+    const hoverDecl = await getHoverAtCursor(
+      `
+          const foob┆ad1: { Bar: string } = #{ Bar: 7 };
+        `,
+    );
+    deepStrictEqual(hoverDecl, {
+      contents: {
+        kind: MarkupKind.Markdown,
+        value: "```typespec\nconst foobad1: { Bar: string }\n```",
+      },
+    });
+
+    const hoverRef = await getHoverAtCursor(
+      `
+          const foobad1: { Bar: string } = #{ Bar: 7 };
+          const def = foob┆ad1;
+        `,
+    );
+    deepStrictEqual(hoverRef, {
+      contents: {
+        kind: MarkupKind.Markdown,
+        value: "```typespec\nconst foobad1: { Bar: string }\n```",
+      },
+    });
+  });
 });
 
 describe("template access", () => {
