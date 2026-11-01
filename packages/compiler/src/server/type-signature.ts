@@ -5,7 +5,7 @@ import { getRawTextWithCache } from "../core/helpers/raw-text-cache.js";
 import { printIdentifier } from "../core/helpers/syntax-utils.js";
 import { getEntityName, getTypeName, isStdNamespace } from "../core/helpers/type-name-utils.js";
 import type { Program } from "../core/program.js";
-import { getFullyQualifiedSymbolName } from "../core/type-utils.js";
+import { getFullyQualifiedSymbolName, isErrorType } from "../core/type-utils.js";
 import type {
   AliasStatementNode,
   Decorator,
@@ -46,15 +46,23 @@ export async function getSymbolSignature(
       return fence(`alias ${await getAliasSignature(decl)}`);
   }
   const entity = sym.type ?? (decl ? program.checker.getTypeOrValueForNode(decl) : null);
-  return getEntitySignature(sym, entity, options);
+  return getEntitySignature(program, sym, entity, options);
 }
 
 function getEntitySignature(
+  program: Program,
   sym: Sym,
   entity: Type | Value | null,
   options: GetSymbolSignatureOptions,
 ): string {
   if (entity === null) {
+    const decl = getSymNode(sym);
+    if (decl?.kind === SyntaxKind.ConstStatement && decl.type) {
+      const declaredType = program.checker.getTypeForNode(decl.type);
+      if (declaredType && !isErrorType(declaredType)) {
+        return fence(`const ${sym.name}: ${getTypeName(declaredType)}`);
+      }
+    }
     return "(error)";
   }
   if ("valueKind" in entity) {
