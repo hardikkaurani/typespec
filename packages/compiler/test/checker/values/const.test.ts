@@ -34,6 +34,33 @@ it("declare const in namespace", async () => {
   strictEqual(value.value.asNumber(), 123);
 });
 
+it("allow assigning value to const with union variant type annotation", async () => {
+  const value = await compileValue(
+    "exampleValue",
+    `
+    union Species {
+      cat: "cat"
+    }
+    const exampleValue: Species.cat = "cat";
+    `,
+  );
+  strictEqual((value as any).value, "cat");
+});
+
+it("allow assigning const with union variant type to const with primitive type", async () => {
+  const value = await compileValue(
+    "s",
+    `
+    union Species {
+      cat: "cat"
+    }
+    const a: Species.cat = "cat";
+    const s: string = a;
+    `,
+  );
+  strictEqual((value as any).value, "cat");
+});
+
 describe("invalid assignment", () => {
   async function expectInvalidAssignment(code: string) {
     const { diagnostics, pos, end } = await diagnoseUsage(code);
@@ -68,6 +95,13 @@ describe("invalid assignment", () => {
     });
     it("array value", async () => {
       await expectInvalidAssignment(`const a: string = ┆#["abc"]┆;`);
+    });
+    it("union variant", async () => {
+      await expectInvalidAssignment(`
+        union Species {
+          cat: "cat"
+        }
+        const a: Species.cat = ┆"dog"┆;`);
     });
   });
 });
