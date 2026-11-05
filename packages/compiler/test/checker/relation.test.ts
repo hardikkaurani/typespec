@@ -1115,6 +1115,62 @@ describe("compiler: checker: type relations", () => {
     });
   });
 
+  describe("UnionVariant target", () => {
+    it("can assign compatible type to union variant", async () => {
+      await expectTypeAssignable({
+        source: `"yes"`,
+        target: "Choice.yes",
+        commonCode: `union Choice {yes: "yes", no: "no" }`,
+      });
+    });
+
+    it("can assign same variant", async () => {
+      await expectTypeAssignable({
+        source: "Choice.yes",
+        target: "Choice.yes",
+        commonCode: `union Choice {yes: "yes", no: "no" }`,
+      });
+    });
+
+    it("cannot assign incompatible type to union variant", async () => {
+      await expectTypeNotAssignable(
+        {
+          source: `"no"`,
+          target: "Choice.yes",
+          commonCode: `union Choice {yes: "yes", no: "no" }`,
+        },
+        {
+          code: "unassignable",
+          message: `Type '"no"' is not assignable to type '"yes"'`,
+        },
+      );
+    });
+  });
+
+  describe("UnionVariant source", () => {
+    it("can assign union variant to primitive target", async () => {
+      await expectTypeAssignable({
+        source: "Choice.yes",
+        target: "string",
+        commonCode: `union Choice {yes: "yes", no: "no" }`,
+      });
+    });
+
+    it("cannot assign union variant to incompatible primitive target", async () => {
+      await expectTypeNotAssignable(
+        {
+          source: "Choice.yes",
+          target: "int32",
+          commonCode: `union Choice {yes: "yes", no: "no" }`,
+        },
+        {
+          code: "unassignable",
+          message: `Type '"yes"' is not assignable to type 'int32'`,
+        },
+      );
+    });
+  });
+
   describe("Enum target", () => {
     it("can assign same enum", async () => {
       await expectTypeAssignable({
