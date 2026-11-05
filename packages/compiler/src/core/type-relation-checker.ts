@@ -307,6 +307,35 @@ export function createTypeRelationChecker(program: Program, checker: Checker): T
         : [Related.false, [createUnassignableDiagnostic(source, target, diagnosticTarget)]];
     }
 
+    if (target.kind === "UnionVariant") {
+      const [related] = isTypeAssignableToInternal(
+        source,
+        target.type,
+        diagnosticTarget,
+        relationCache,
+      );
+      if (related) {
+        return [Related.true, []];
+      }
+      return [Related.false, [createUnassignableDiagnostic(source, target, diagnosticTarget)]];
+    }
+
+    if (source.kind === "UnionVariant") {
+      if (target.kind === "Union" && source.union === target) {
+        return [Related.true, []];
+      }
+      const [related] = isTypeAssignableToInternal(
+        source.type,
+        target,
+        diagnosticTarget,
+        relationCache,
+      );
+      if (related) {
+        return [Related.true, []];
+      }
+      return [Related.false, [createUnassignableDiagnostic(source, target, diagnosticTarget)]];
+    }
+
     const isSimpleTypeRelated = isSimpleTypeAssignableTo(source, target);
     if (isSimpleTypeRelated === true) {
       return [Related.true, []];
